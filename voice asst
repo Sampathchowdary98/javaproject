@@ -1,0 +1,76 @@
+import com.sun.speech.freetts.Voice;
+import com.sun.speech.freetts.VoiceManager;
+
+import javax.speech.recognition.*;
+import java.io.FileReader;
+import java.io.IOException;
+
+public class VoiceAssistant {
+
+    public static void main(String[] args) {
+        VoiceAssistant voiceAssistant = new VoiceAssistant();
+        voiceAssistant.run();
+    }
+
+    public void run() {
+        try {
+            Recognizer recognizer = Central.createRecognizer(null);
+            recognizer.allocate();
+
+            FileReader grammarFile = new FileReader("commands.gram"); // Create a grammar file with predefined commands
+            RuleGrammar ruleGrammar = recognizer.loadJSGF(grammarFile);
+
+            recognizer.addResultListener(new ResultListener());
+
+            System.out.println("Listening for commands...");
+            recognizer.commitChanges();
+            recognizer.requestFocus();
+            recognizer.resume();
+
+            while (true) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    class ResultListener implements ResultListener {
+
+        @Override
+        public void resultAccepted(ResultEvent resultEvent) {
+            try {
+                Result result = (Result) (resultEvent.getSource());
+                ConfidenceResultToken resultToken = (ConfidenceResultToken) result.getBestResultNoFiller();
+
+                String command = resultToken.getWord();
+
+                System.out.println("You said: " + command);
+
+                if ("hello".equalsIgnoreCase(command)) {
+                    speak("Hi there!");
+                } else if ("your name".equalsIgnoreCase(command)) {
+                    speak("I'm a voice assistant, and you can call me whatever you like!");
+                } else if ("exit".equalsIgnoreCase(command)) {
+                    speak("Goodbye!");
+                    System.exit(0);
+                } else {
+                    speak("I'm not sure how to respond to that. Can you please clarify?");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void speak(String text) {
+        Voice voice = VoiceManager.getInstance().getVoice("kevin16");
+        voice.allocate();
+        voice.speak(text);
+        voice.deallocate();
+    }
+}
